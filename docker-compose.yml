@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: poc-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    command: ["bash", "-c", "chmod 400 /data/mongodb.key && mongod --replSet rs0 --bind_ip_all --auth --keyFile /data/mongodb.key"]
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongodb-init.js:/docker-entrypoint-initdb.d/mongodb-init.js:ro
+      - ./docker/mongodb.key:/data/mongodb.key:ro    networks:
+      - poc-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "try { db.adminCommand('ping') } catch(e) { print(e); exit(1) }"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      
+  mongodb-setup:
+    image: mongo:7.0
+    container_name: poc-mongodb-setup
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb:27017 -u admin -p password123 --authenticationDatabase admin --eval "
+        rs.initiate({
+          _id: 'rs0',
+          members: [
+            { _id: 0, host: 'mongodb:27017' }
+          ]
+        });
+        rs.status();
+      "
+    networks:
+      - poc-network
+    restart: "no"
+
+  # Optional: Run the Go applications in containers
+  # Uncomment these services if you want to run the apps in Docker instead of locally
+  
+  # watcher:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.watcher
+  #   container_name: poc-watcher
+  #   depends_on:
+  #     mongodb-setup:
+  #       condition: service_completed_successfully
+  #   environment:
+  #     MONGO_URI: mongodb://admin:password123@mongodb:27017/changestream_poc?authSource=admin&replicaSet=rs0
+  #   networks:
+  #     - poc-network
+  #   restart: unless-stopped
+
+  # inserter:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.inserter
+  #   container_name: poc-inserter
+  #   depends_on:
+  #     mongodb-setup:
+  #       condition: service_completed_successfully
+  #   environment:
+  #     MONGO_URI: mongodb://admin:password123@mongodb:27017/changestream_poc?authSource=admin&replicaSet=rs0
+  #   networks:
+  #     - poc-network
+  #   restart: "no"
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  poc-network:
+    driver: bridge
