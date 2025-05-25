@@ -26,6 +26,11 @@ clean: ## Clean built binaries
 	@rm -rf bin/
 	@echo "Clean complete!"
 
+reset-token: ## Reset the resume token to start fresh
+	@echo "Resetting resume token..."
+	@bash reset-resume-token.sh
+	@echo "Resume token reset complete!"
+
 health-check: ## Run health check on the watcher
 	@echo "Checking watcher health..."
 	@bash health-check.sh

@@ -156,7 +156,64 @@ MONGO_URI="mongodb://user:pass@localhost:27017/?replicaSet=rs0" \
 RESUME_TOKEN_FILE="custom_token.json" \
 METRICS_FILE="custom_metrics.json" \
 go run watcher/*.go
+
+# Reset the resume token (start fresh)
+go run watcher/*.go --reset-token
+
+# Start from a specific point in time
+go run watcher/*.go --start-from=2023-05-01T00:00:00Z
+
+# Show help
+go run watcher/*.go --help
 ```
+
+### Reset Resume Token
+
+To re-process events from MongoDB, you need to reset the resume token:
+
+1. Using the command-line flag:
+   ```bash
+   go run watcher/*.go --reset-token
+   ```
+
+2. Using the reset script:
+   ```bash
+   # On Linux/macOS
+   ./reset-resume-token.sh
+   
+   # On Windows
+   reset-resume-token.bat
+   ```
+
+3. Using the make target:
+   ```bash
+   make reset-token
+   ```
+
+4. Manually deleting the file:
+   ```bash
+   rm -f watcher/resume_token.json
+   ```
+
+> **Important Note about Change Streams:** MongoDB only retains change stream events 
+> in the oplog for a limited time (typically a few hours to days). Once events expire
+> from the oplog, you cannot retrieve them through a change stream, even after resetting
+> the resume token. To process existing documents, use the `--replay-all` flag.
+
+### Replaying All Documents
+
+If you need to process all documents in a collection (not just recent changes):
+
+```bash
+# Process all existing documents as "insert" events, then watch for new changes
+go run watcher/*.go --replay-all
+
+# You can combine flags
+go run watcher/*.go --reset-token --replay-all
+```
+
+This will fetch all documents in the collection and process them as if they were
+newly inserted, then continue watching for actual changes.
 
 ### Running the Inserter
 

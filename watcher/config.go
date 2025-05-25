@@ -20,6 +20,7 @@ type Config struct {
 	ResumeTokenFile    string
 	BatchSize          int32
 	FullDocumentOption string
+	StartTime          *time.Time // Optional start time for the change stream
 
 	// Reconnection settings
 	InitialBackoff    time.Duration

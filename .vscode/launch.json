@@ -1,0 +1,145 @@
+{
+    "version": "0.2.0",
+    "configurations": [        {
+            "name": "Launch Watcher",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0",
+                "MONGO_DB": "changestream_poc",
+                "MONGO_COLLECTION": "test_data",
+                "DEBUG": "true",
+                "STATS_INTERVAL": "10s"
+            }
+        },
+        {
+            "name": "Launch Watcher with Reset Token",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "args": ["--reset-token"],
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0",
+                "MONGO_DB": "changestream_poc",
+                "MONGO_COLLECTION": "test_data",
+                "DEBUG": "true",
+                "STATS_INTERVAL": "10s"
+            }
+        },
+        {
+            "name": "Launch Watcher with Replay All",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "args": ["--replay-all"],
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0",
+                "MONGO_DB": "changestream_poc",
+                "MONGO_COLLECTION": "test_data",
+                "DEBUG": "true",
+                "STATS_INTERVAL": "10s"
+            }
+        },
+        {
+            "name": "Launch Watcher with Start From Time",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "args": ["--start-from", "2023-01-01T00:00:00Z"],
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0",
+                "MONGO_DB": "changestream_poc",
+                "MONGO_COLLECTION": "test_data",
+                "DEBUG": "true",
+                "STATS_INTERVAL": "10s"
+            }
+        },
+        {
+            "name": "Launch Watcher with Replay and Reset",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "args": ["--replay-all", "--reset-token"],
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0",
+                "MONGO_DB": "changestream_poc",
+                "MONGO_COLLECTION": "test_data",
+                "DEBUG": "true",
+                "STATS_INTERVAL": "10s"
+            }
+        },
+        {
+            "name": "Launch Inserter",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/inserter",
+            "console": "integratedTerminal",
+            "showLog": true,
+            "env": {
+                "MONGO_URI": "mongodb://localhost:27017/?replicaSet=rs0"
+            }
+        },
+        {
+            "name": "Launch Watcher (Local MongoDB)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/watcher",
+            "console": "integratedTerminal",
+            "showLog": true
+        },
+        {
+            "name": "Launch Inserter (Local MongoDB)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/inserter",
+            "console": "integratedTerminal",
+            "showLog": true
+        }
+    ],    "compounds": [
+        {
+            "name": "Launch Both Applications",
+            "configurations": [
+                "Launch Watcher",
+                "Launch Inserter"
+            ],
+            "stopAll": true,
+            "presentation": {
+                "hidden": false,
+                "group": "MongoDB PoC",
+                "order": 1
+            }
+        },
+        {
+            "name": "Replay All and Insert",
+            "configurations": [
+                "Launch Watcher with Replay All",
+                "Launch Inserter"
+            ],
+            "stopAll": true,
+            "presentation": {
+                "hidden": false,
+                "group": "MongoDB PoC",
+                "order": 2
+            }
+        }
+    ]
+}

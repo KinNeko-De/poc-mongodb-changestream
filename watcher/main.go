@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -31,8 +32,17 @@ var (
 )
 
 func main() {
+	// Parse command line flags
+	flags := ParseFlags()
+
 	// Load configuration
 	config = NewDefaultConfig()
+
+	// Process command line flags (may override config)
+	if err := HandleFlags(flags, config); err != nil {
+		fmt.Printf("Error processing flags: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Validate configuration
 	if errors := config.ValidateConfig(); len(errors) > 0 {
@@ -41,9 +51,11 @@ func main() {
 		}
 		os.Exit(1)
 	}
-
 	// Initialize metrics
 	metrics = NewMetrics(config.MetricsFile)
+
+	// Ensure resume token file exists (create empty one if not)
+	ensureResumeTokenFileExists(config.ResumeTokenFile)
 
 	// Set up logging
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
@@ -68,9 +80,21 @@ func main() {
 	// Create context for overall application
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	// Start metrics reporter
 	go reportMetricsPeriodically(ctx, metrics, config.StatsInterval)
+
+	// If replay-all flag is set, replay all documents before watching for changes
+	if flags.ReplayAll {
+		// Set up a new context for replay
+		replayCtx, replayCancel := context.WithCancel(ctx)
+		defer replayCancel()
+
+		log.Println("Replaying all documents in the collection...")
+		if err := ReplayAllDocuments(replayCtx, config, metrics); err != nil {
+			log.Printf("Error during document replay: %v", err)
+		}
+		log.Println("Replay complete, now starting change stream watcher...")
+	}
 
 	// Start the watcher with reconnection logic
 	var wg sync.WaitGroup
@@ -305,7 +329,6 @@ func connectAndWatch(ctx context.Context, metrics *Metrics, config *Config) erro
 		}
 		skipResumeToken = true
 	}
-
 	// Create change stream options
 	csOptions := options.ChangeStream()
 	// Configure the change stream options
@@ -324,8 +347,16 @@ func connectAndWatch(ctx context.Context, metrics *Metrics, config *Config) erro
 		csOptions.SetFullDocument(options.UpdateLookup)
 	}
 
-	// Set the resume mechanism
-	if !skipResumeToken {
+	// If a start time is specified, use it instead of resume token
+	if config.StartTime != nil {
+		log.Printf("Using start time: %v (ignoring resume token)", config.StartTime.Format(time.RFC3339))
+		csOptions.SetStartAtOperationTime(&primitive.Timestamp{
+			T: uint32(config.StartTime.Unix()),
+			I: 0,
+		})
+		skipResumeToken = true
+	} else if !skipResumeToken {
+		// Otherwise use the resume token if available
 		if resumeAfter != nil {
 			log.Printf("Resuming change stream using resumeAfter")
 			csOptions.SetResumeAfter(resumeAfter)
@@ -586,4 +617,26 @@ func loadResumeToken(filename string) (*ResumeToken, error) {
 	}
 
 	return &resumeToken, nil
+}
+
+// ensureResumeTokenFileExists creates an empty resume token file if it doesn't exist
+func ensureResumeTokenFileExists(filename string) {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		log.Printf("Resume token file does not exist, creating empty one: %s", filename)
+		// Create an empty resume token
+		emptyToken := ResumeToken{
+			Timestamp: time.Now(),
+		}
+		data, err := json.Marshal(emptyToken)
+		if err != nil {
+			log.Printf("Warning: Failed to create empty resume token: %v", err)
+			return
+		}
+
+		if err := os.WriteFile(filename, data, 0644); err != nil {
+			log.Printf("Warning: Failed to write empty resume token file: %v", err)
+			return
+		}
+		log.Printf("Created empty resume token file")
+	}
 }
