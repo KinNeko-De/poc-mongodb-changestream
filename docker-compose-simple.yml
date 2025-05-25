@@ -18,8 +18,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-      
-  mongodb-setup:
+        mongodb-setup:
     image: mongo:7.0
     container_name: poc-mongodb-setup
     depends_on:
@@ -27,12 +26,46 @@ services:
         condition: service_healthy
     command: >
       mongosh --host mongodb:27017 --eval "
+        // Initialize replica set
         rs.initiate({
           _id: 'rs0',
           members: [
             { _id: 0, host: 'mongodb:27017' }
           ]
         });
+        
+        // Wait for replica set to initialize
+        let attempts = 30;
+        while (attempts > 0) {
+          const status = rs.status();
+          if (status.ok && status.members && status.members[0].state === 1) {
+            break;
+          }
+          print('Waiting for replica set to initialize...');
+          sleep(1000);
+          attempts--;
+        }
+        
+        // Create database and collection
+        const db = db.getSiblingDB('changestream_poc');
+        
+        // Create the test_data collection if it doesn't exist
+        if (!db.getCollectionNames().includes('test_data')) {
+          db.createCollection('test_data');
+          print('Created collection: test_data');
+        }
+        
+        // Create a unique index on the 'name' field
+        db.test_data.createIndex({ 'name': 1 }, { unique: true });
+        print('Created unique index on name field');
+        
+        // Show the collection and index status
+        print('Collections:');
+        db.getCollectionNames().forEach(c => print(' - ' + c));
+        print('Indexes on test_data:');
+        db.test_data.getIndexes().forEach(idx => print(' - ' + JSON.stringify(idx)));
+        
+        // Show replica set status
         rs.status();
       "
     networks:
