@@ -1,13 +1,13 @@
 # MongoDB Change Stream PoC
 
-This project demonstrates MongoDB change streams using Go applications.
+This project demonstrates MongoDB change streams using Go applications with a focus on resilience and production-readiness.
 
 ## Overview
 
 The project consists of two Go applications:
 
 1. **Inserter** (`inserter/main.go`): Inserts random data into MongoDB using 2 parallel goroutines
-2. **Watcher** (`watcher/main.go`): Watches for changes in the MongoDB collection using change streams
+2. **Watcher** (`watcher/main.go`): Watches for changes in the MongoDB collection using change streams with resilience features
 
 ## Prerequisites
 
@@ -15,6 +15,31 @@ The project consists of two Go applications:
 - Docker and Docker Compose (recommended)
 - MongoDB running locally on port 27017 (if not using Docker)
 - MongoDB should be configured as a replica set (required for change streams)
+
+## Key Features
+
+The watcher application includes several production-ready features:
+
+1. **Resilient Connection Handling**:
+   - Automatic reconnection with exponential backoff
+   - Resume token persistence for continuing after restarts
+   - Connection health monitoring
+   
+2. **Error Handling**:
+   - Categorized error handling for different MongoDB error types
+   - Special handling for resume token errors
+   - Proper logging of errors with context
+   
+3. **Monitoring and Metrics**:
+   - Tracks operation counts (inserts, updates, etc.)
+   - Measures error rates and reconnection attempts
+   - Provides health status information
+   - Metrics persistence to file
+   
+4. **Configurability**:
+   - Environment variable configuration
+   - Reasonable defaults for all settings
+   - Validation of configuration parameters
 
 ## Quick Start with Docker (Recommended)
 
@@ -47,7 +72,7 @@ The easiest way to get started is using the provided Docker Compose setup:
 3. **Run the applications**:
    ```bash
    # Terminal 1: Start the watcher
-   go run watcher/main.go
+   go run watcher/*.go
    
    # Terminal 2: Start the inserter
    go run inserter/main.go
@@ -86,9 +111,32 @@ make dev-with-docker  # Start MongoDB in Docker, run Go apps locally
 
 ## Configuration
 
-Both applications support configuration via environment variables:
+The watcher application supports extensive configuration via environment variables:
 
-- `MONGO_URI`: MongoDB connection string (default: `mongodb://localhost:27017`)
+### MongoDB Connection
+- `MONGO_URI`: MongoDB connection string (default: `mongodb://localhost:27017/?replicaSet=rs0`)
+- `MONGO_DB`: Database name (default: `changestream_poc`)
+- `MONGO_COLLECTION`: Collection name (default: `test_data`)
+- `MONGO_CONNECT_TIMEOUT`: Connection timeout in seconds (default: `10s`)
+
+### Change Stream Settings
+- `RESUME_TOKEN_FILE`: File to store the resume token (default: `resume_token.json`)
+- `BATCH_SIZE`: Number of changes to retrieve in a batch (default: `100`)
+- `FULL_DOCUMENT_OPTION`: Full document option, either `updateLookup`, `whenAvailable`, or `required` (default: `updateLookup`)
+
+### Reconnection Settings
+- `INITIAL_BACKOFF`: Initial backoff duration (default: `1s`)
+- `MAX_BACKOFF`: Maximum backoff duration (default: `1m`)
+- `BACKOFF_MULTIPLIER`: Backoff multiplier for exponential backoff (default: `2.0`)
+- `MAX_RECONNECT_TRIES`: Maximum reconnection attempts (default: `12`)
+
+### Monitoring
+- `METRICS_FILE`: File to store metrics (default: `watcher_metrics.json`)
+- `LOG_FILE`: Log file path (default: `watcher.log`)
+- `STATS_INTERVAL`: Interval to print statistics (default: `30s`)
+
+### General
+- `DEBUG`: Enable debug mode (default: `false`)
 
 For Docker setup, the connection string is:
 ```
@@ -98,6 +146,51 @@ mongodb://admin:password123@localhost:27017/changestream_poc?authSource=admin&re
 ## Usage
 
 ### Running the Watcher
+
+```bash
+# Run with default settings
+go run watcher/*.go
+
+# Run with custom settings
+MONGO_URI="mongodb://user:pass@localhost:27017/?replicaSet=rs0" \
+RESUME_TOKEN_FILE="custom_token.json" \
+METRICS_FILE="custom_metrics.json" \
+go run watcher/*.go
+```
+
+### Running the Inserter
+
+```bash
+# Run with default settings
+go run inserter/main.go
+```
+
+## Health Monitoring
+
+The project includes health check scripts for monitoring the watcher:
+
+- `health-check.sh` for Linux/macOS
+- `health-check.bat` for Windows
+
+These scripts check if the watcher is healthy by inspecting its metrics file.
+
+## Extending the Applications
+
+### Adding Custom Business Logic
+
+The watcher application includes placeholder functions for custom business logic in the event handlers:
+
+- `handleInsert`: For insert operations
+- `handleUpdate`: For update operations
+- `handleReplace`: For replace operations
+- `handleDelete`: For delete operations
+
+These functions can be extended to implement application-specific behavior such as:
+- Sending notifications
+- Updating caches
+- Triggering workflows
+- Logging to external systems
+- Updating metrics
 
 Start the watcher first to capture all change events:
 

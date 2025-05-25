@@ -19,12 +19,20 @@ run-inserter: ## Run the data inserter application
 
 run-watcher: ## Run the change stream watcher application
 	@echo "Starting watcher..."
-	@go run watcher/main.go
+	@go run watcher/*.go
 
 clean: ## Clean built binaries
 	@echo "Cleaning..."
 	@rm -rf bin/
 	@echo "Clean complete!"
+
+health-check: ## Run health check on the watcher
+	@echo "Checking watcher health..."
+	@bash health-check.sh
+
+check-metrics: ## Display the current metrics
+	@echo "Current watcher metrics:"
+	@cat watcher_metrics.json 2>/dev/null || echo "No metrics file found!"
 
 deps: ## Download and tidy dependencies
 	@echo "Downloading dependencies..."
