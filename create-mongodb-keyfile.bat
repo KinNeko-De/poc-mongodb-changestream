@@ -2,17 +2,14 @@
 REM This script creates a MongoDB keyfile with proper permissions for replica set authentication
 
 set KEYFILE=docker\mongodb.key
-set TEMP_KEYFILE=docker\mongodb.key.tmp
 
 echo Creating MongoDB keyfile for replica set authentication...
 
-REM Generate a random keyfile
-REM On Windows, we need a different approach than openssl
-echo mongodb-keyfile-random-content-%RANDOM%%RANDOM%%RANDOM%%RANDOM% > %TEMP_KEYFILE%
+REM Make sure the docker directory exists
+if not exist docker mkdir docker
 
-REM Copy to final location
-copy /Y %TEMP_KEYFILE% %KEYFILE% > nul
-del %TEMP_KEYFILE%
+REM Generate a random string for the keyfile (using PowerShell)
+powershell -Command "$randomKey = [System.Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes(756)); Set-Content -Path '%KEYFILE%' -Value $randomKey"
 
 echo MongoDB keyfile created successfully.
 echo Now you can run 'docker-compose up -d' to start MongoDB.
