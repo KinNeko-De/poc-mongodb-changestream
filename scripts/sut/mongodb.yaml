@@ -1,0 +1,56 @@
+name: mongodb-cluster
+
+networks:
+  inner-cluster-communication:
+
+volumes:
+  mongodb-db:
+  mongodb-configdb:
+
+services:
+  mongodb:
+    image: mongo:latest
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    networks:
+      - inner-cluster-communication
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb-db:/data/db
+      - mongodb-configdb:/data/configdb
+  mongodb-init:
+    image: mongo:latest
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb:27017 --eval "
+        // Initialize replica set with mongodb in the hostname
+        rs.initiate({
+          _id: 'rs0',
+          members: [
+            { _id: 0, host: 'mongodb:27017' }
+          ]
+        });
+        
+        // Wait for replica set to initialize
+        let attempts = 30;
+        while (attempts > 0) {
+          const status = rs.status();
+          if (status.ok && status.members && status.members[0].state === 1) {
+            break;
+          }
+          print('Waiting for replica set to initialize...');
+          sleep(1000);
+          attempts--;
+        }
+      "
+    networks:
+      - inner-cluster-communication
+    restart: "no"
