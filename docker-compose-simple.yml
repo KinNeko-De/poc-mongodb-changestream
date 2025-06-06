@@ -25,49 +25,15 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    volumes:
+      - ./docker/mongodb-init-replica.js:/scripts/mongodb-init-replica.js
+      - ./docker/mongodb-init.js:/scripts/mongodb-init.js
     command: >
-      mongosh --host mongodb:27017 --eval "
-        // Initialize replica set
-        rs.initiate({
-          _id: 'rs0',
-          members: [
-            { _id: 0, host: 'mongodb:27017' }
-          ]
-        });
-        
-        // Wait for replica set to initialize
-        let attempts = 30;
-        while (attempts > 0) {
-          const status = rs.status();
-          if (status.ok && status.members && status.members[0].state === 1) {
-            break;
-          }
-          print('Waiting for replica set to initialize...');
-          sleep(1000);
-          attempts--;
-        }
-        
-        // Create database and collection
-        const db = db.getSiblingDB('changestream_poc');
-        
-        // Create the test_data collection if it doesn't exist
-        if (!db.getCollectionNames().includes('test_data')) {
-          db.createCollection('test_data');
-          print('Created collection: test_data');
-        }
-        
-        // Create a unique index on the 'name' field
-        db.test_data.createIndex({ 'name': 1 }, { unique: true });
-        print('Created unique index on name field');
-        
-        // Show the collection and index status
-        print('Collections:');
-        db.getCollectionNames().forEach(c => print(' - ' + c));
-        print('Indexes on test_data:');
-        db.test_data.getIndexes().forEach(idx => print(' - ' + JSON.stringify(idx)));
-        
-        // Show replica set status
-        rs.status();
+      bash -c "
+        echo 'Running replica set initialization...' &&
+        mongosh --host mongodb:27017 --file /scripts/mongodb-init-replica.js &&
+        echo 'Running database initialization...' &&
+        mongosh --host mongodb:27017 --file /scripts/mongodb-init.js
       "
     networks:
       - poc-network
