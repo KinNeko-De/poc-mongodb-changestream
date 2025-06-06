@@ -29,27 +29,17 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    volumes:
+      - ./mongodb-init-replica.js:/tmp/mongodb-init-replica.js:ro
+      - ./mongodb-init-collection-file.js:/tmp/mongodb-init-collection-file.js:ro
+      - mongodb-db:/data/db
+      - mongodb-configdb:/data/configdb
     command: >
-      mongosh --host mongodb:27017 --eval "
-        // Initialize replica set with mongodb in the hostname
-        rs.initiate({
-          _id: 'rs0',
-          members: [
-            { _id: 0, host: 'mongodb:27017' }
-          ]
-        });
-        
-        // Wait for replica set to initialize
-        let attempts = 30;
-        while (attempts > 0) {
-          const status = rs.status();
-          if (status.ok && status.members && status.members[0].state === 1) {
-            break;
-          }
-          print('Waiting for replica set to initialize...');
-          sleep(1000);
-          attempts--;
-        }
+      sh -c "
+        echo 'Running replica set initialization...' &&
+        mongosh --host mongodb:27017 --file /tmp/mongodb-init-replica.js &&
+        echo 'Running database initialization for file...' &&
+        mongosh --host mongodb:27017 --file /tmp/mongodb-init-collection-file.js
       "
     networks:
       - inner-cluster-communication
