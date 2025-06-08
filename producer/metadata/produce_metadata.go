@@ -16,6 +16,4 @@ func ProduceFileMetadata(ctx context.Context) error {
 		fmt.Println("File metadata produced")
 		return nil // 5 seconds passed, action completed
 	}
-
-	return nil
 }
