@@ -22,7 +22,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		metadata.ProduceFileMetadata(ctx) // Updated function call
+		metadata.ProduceFileMetadata(ctx)
 	}()
 
 	wg.Wait()

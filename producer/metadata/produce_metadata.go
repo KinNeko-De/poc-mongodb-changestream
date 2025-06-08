@@ -20,7 +20,11 @@ func ProduceFileMetadata(ctx context.Context) error {
 	}
 }
 
+var minDelay = 2
+var maxDelay = 5
+
 func CreateJitteredDelay() time.Duration {
-	jitter := time.Duration(rand.Intn(3000)+2000) * time.Millisecond
+	jitter := time.Duration(rand.Intn(maxDelay-minDelay)+minDelay) * time.Second
+	fmt.Printf("Jittered delay: %v\n", jitter)
 	return jitter
 }
