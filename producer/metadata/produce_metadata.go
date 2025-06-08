@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 )
 
@@ -13,8 +14,13 @@ func ProduceFileMetadata(ctx context.Context) error {
 		case <-ctx.Done():
 			fmt.Println("Context cancelled, producing metadata stopped")
 			return ctx.Err()
-		case <-time.After(20 * time.Second):
+		case <-time.After(CreateJitteredDelay()):
 			fmt.Println("File metadata produced")
 		}
 	}
+}
+
+func CreateJitteredDelay() time.Duration {
+	jitter := time.Duration(rand.Intn(3000)+2000) * time.Millisecond
+	return jitter
 }
