@@ -5,10 +5,25 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+var (
+	minDelay = 2
+	maxDelay = 5
+	client   *mongo.Client
 )
 
 func ProduceFileMetadata(ctx context.Context) error {
 	fmt.Println("Producing file metadata...")
+
+	if err := initializeMongoClient(ctx); err != nil {
+		return err
+	}
+	defer disconnectMongoClient(ctx) // Ensure the client is disconnected when the function exits
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -20,8 +35,27 @@ func ProduceFileMetadata(ctx context.Context) error {
 	}
 }
 
-var minDelay = 2
-var maxDelay = 5
+func initializeMongoClient(ctx context.Context) error {
+	if client == nil {
+		var err error
+		client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+		if err != nil {
+			return fmt.Errorf("failed to connect to MongoDB: %v", err)
+		}
+		fmt.Println("MongoDB client initialized")
+	}
+	return nil
+}
+
+func disconnectMongoClient(ctx context.Context) {
+	if client != nil {
+		if err := client.Disconnect(ctx); err != nil {
+			fmt.Printf("Failed to disconnect MongoDB client: %v\n", err)
+		} else {
+			fmt.Println("MongoDB client disconnected")
+		}
+	}
+}
 
 func CreateJitteredDelay() time.Duration {
 	jitter := time.Duration(rand.Intn(maxDelay-minDelay)+minDelay) * time.Second
