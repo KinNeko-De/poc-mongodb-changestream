@@ -38,7 +38,11 @@ func ProduceFileMetadata(ctx context.Context) error {
 func initializeMongoClient(ctx context.Context) error {
 	if client == nil {
 		var err error
-		client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+		clientOptions := options.Client().
+			ApplyURI("mongodb://localhost:27017/?replicaSet=rs0").
+			SetDirect(true)
+		// SetHosts([]string{"localhost:27017"})
+		client, err = mongo.Connect(ctx, clientOptions)
 		if err != nil {
 			return fmt.Errorf("failed to connect to MongoDB: %v", err)
 		}
