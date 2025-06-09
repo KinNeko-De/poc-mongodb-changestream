@@ -43,6 +43,12 @@ func initializeMongoClient(ctx context.Context) error {
 			return fmt.Errorf("failed to connect to MongoDB: %v", err)
 		}
 		fmt.Println("MongoDB client initialized")
+
+		// Ping the database to ensure it is reachable
+		if err := client.Ping(ctx, nil); err != nil {
+			return fmt.Errorf("failed to ping MongoDB: %v", err)
+		}
+		fmt.Println("MongoDB ping successful")
 	}
 	return nil
 }
