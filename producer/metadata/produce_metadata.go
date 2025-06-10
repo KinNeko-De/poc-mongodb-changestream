@@ -22,7 +22,7 @@ func ProduceFileMetadata(ctx context.Context) error {
 	if err := initializeMongoClient(ctx); err != nil {
 		return err
 	}
-	defer disconnectMongoClient(ctx) // Ensure the client is disconnected when the function exits
+	defer disconnectMongoClient()
 
 	for {
 		select {
@@ -55,9 +55,13 @@ func initializeMongoClient(ctx context.Context) error {
 	return nil
 }
 
-func disconnectMongoClient(ctx context.Context) {
+func disconnectMongoClient() {
 	if client != nil {
-		if err := client.Disconnect(ctx); err != nil {
+		// Create a new context with timeout for disconnect operation, the application context might be cancelled
+		disconnectCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := client.Disconnect(disconnectCtx); err != nil {
 			fmt.Printf("Failed to disconnect MongoDB client: %v\n", err)
 		} else {
 			fmt.Println("MongoDB client disconnected")
