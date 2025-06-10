@@ -31,6 +31,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./mongodb-init-replica.js:/tmp/mongodb-init-replica.js:ro
       - ./mongodb-init-collection-file.js:/tmp/mongodb-init-collection-file.js:ro
