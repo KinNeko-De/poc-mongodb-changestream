@@ -13,6 +13,8 @@ services:
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     networks:
       - inner-cluster-communication
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s

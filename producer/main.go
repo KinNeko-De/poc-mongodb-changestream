@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/kinneko-de/poc-mongodb-changestream/producer/metadata" // Updated import path
+	"github.com/kinneko-de/poc-mongodb-changestream/producer/metadata"
 )
 
 func main() {

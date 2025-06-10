@@ -1,10 +1,9 @@
 print('Starting MongoDB replica set initialization...');
 
-// Initialize replica set
 rs.initiate({
   _id: 'rs0',
   members: [
-    { _id: 0, host: 'mongodb:27017' }
+    { _id: 0, host: 'host.docker.internal:27017' }
   ]
 });
 
