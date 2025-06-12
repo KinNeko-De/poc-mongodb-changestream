@@ -23,7 +23,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		err := metadata.ProduceFileMetadata(ctx)
-		if err != nil {
+		if err != nil && !os.IsTimeout(err) && err != context.Canceled && err != context.DeadlineExceeded {
 			fmt.Printf("Error producing file metadata: %v\n", err)
 		}
 	}()

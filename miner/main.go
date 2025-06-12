@@ -22,7 +22,10 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		metadata.MiningFileMetadata(ctx)
+		err := metadata.MiningFileMetadata(ctx)
+		if err != nil && !os.IsTimeout(err) && err != context.Canceled && err != context.DeadlineExceeded {
+			fmt.Printf("Error producing file metadata: %v\n", err)
+		}
 	}()
 
 	wg.Wait()

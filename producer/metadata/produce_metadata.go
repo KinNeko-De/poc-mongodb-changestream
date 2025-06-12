@@ -63,7 +63,7 @@ func initializeMongoClient(ctx context.Context) error {
 	if client == nil {
 		var err error
 		clientOptions := options.Client().
-			ApplyURI("mongodb://localhost:27018/?replicaSet=rs0")
+			ApplyURI("mongodb://localhost:27017/?replicaSet=rs0")
 		client, err = mongo.Connect(ctx, clientOptions)
 		if err != nil {
 			return fmt.Errorf("failed to connect to MongoDB: %v", err)
