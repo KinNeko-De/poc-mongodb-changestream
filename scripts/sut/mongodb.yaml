@@ -10,6 +10,7 @@ volumes:
 services:
   mongodb:
     image: mongo:latest
+    container_name: mongodb
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     networks:
       - inner-cluster-communication
@@ -28,6 +29,7 @@ services:
       - mongodb-configdb:/data/configdb
   mongodb-init:
     image: mongo:latest
+    container_name: mongodb-init
     depends_on:
       mongodb:
         condition: service_healthy
@@ -47,4 +49,3 @@ services:
       "
     networks:
       - inner-cluster-communication
-    restart: "no"
