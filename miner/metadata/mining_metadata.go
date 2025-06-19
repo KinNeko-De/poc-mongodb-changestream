@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -37,7 +38,8 @@ func WatchChengeStream(ctx context.Context) error {
 	fmt.Println("Watching change stream for file metadata...")
 
 	collection := client.Database("store_file").Collection("file")
-	changeStreamOptions := options.ChangeStream()
+	changeStreamOptions := options.ChangeStream().
+		SetStartAtOperationTime(&primitive.Timestamp{T: 1})
 	changeStream, err := collection.Watch(ctx, mongo.Pipeline{}, changeStreamOptions)
 	if err != nil {
 		return fmt.Errorf("failed to watch change stream: %v", err)
