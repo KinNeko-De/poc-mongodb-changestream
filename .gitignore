@@ -24,3 +24,6 @@ go.work
 scripts/sut/log/**
 # builded app
 bin/**
+
+# Ignore resume token
+miner/app/

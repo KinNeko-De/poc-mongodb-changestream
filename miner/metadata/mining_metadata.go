@@ -3,16 +3,21 @@ package metadata
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const ResumeTokenDirectory = "app/data"
+const ResumeTokenFile = "resume_token.bin"
+
 var (
-	client *mongo.Client
+	client              *mongo.Client
+	ResumeTokenFilePath = filepath.Join(ResumeTokenDirectory, ResumeTokenFile)
 )
 
 func MiningFileMetadata(ctx context.Context) error {
@@ -29,17 +34,31 @@ func MiningFileMetadata(ctx context.Context) error {
 			fmt.Println("Context cancelled, mining metadata stopped")
 			return ctx.Err()
 		default:
-			WatchChengeStream(ctx)
+			return WatchChengeStream(ctx)
 		}
 	}
 }
 
 func WatchChengeStream(ctx context.Context) error {
 	fmt.Println("Watching change stream for file metadata...")
+	err := EnsureREsumeTokenDirectoryExists()
+	if err != nil {
+		return fmt.Errorf("failed to create resume token directory: %v", err)
+	}
+
+	resumeToken, err := FetchResumeToken(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch resume token: %v", err)
+	}
 
 	collection := client.Database("store_file").Collection("file")
-	changeStreamOptions := options.ChangeStream().
-		SetStartAtOperationTime(&primitive.Timestamp{T: 1})
+	changeStreamOptions := options.ChangeStream()
+
+	if resumeToken != nil {
+		fmt.Println("Resuming change stream from previous token")
+		changeStreamOptions = changeStreamOptions.SetResumeAfter(resumeToken)
+	}
+
 	changeStream, err := collection.Watch(ctx, mongo.Pipeline{}, changeStreamOptions)
 	if err != nil {
 		return fmt.Errorf("failed to watch change stream: %v", err)
@@ -52,6 +71,9 @@ func WatchChengeStream(ctx context.Context) error {
 			return fmt.Errorf("failed to decode change stream event: %v", err)
 		}
 		fmt.Printf("Change detected: %v\n", change)
+
+		resumeToken := changeStream.ResumeToken()
+		StoreResumeToken(ctx, resumeToken)
 	}
 
 	if err := changeStream.Err(); err != nil {
@@ -92,4 +114,24 @@ func disconnectMongoClient() {
 			fmt.Println("MongoDB client disconnected")
 		}
 	}
+}
+
+func EnsureREsumeTokenDirectoryExists() any {
+	return os.MkdirAll(ResumeTokenDirectory, 0755)
+}
+
+func StoreResumeToken(ctx context.Context, token bson.Raw) error {
+	return os.WriteFile(ResumeTokenFilePath, token, 0644)
+}
+
+func FetchResumeToken(ctx context.Context) (bson.Raw, error) {
+	data, err := os.ReadFile(ResumeTokenFilePath)
+	if err != nil {
+		// If file doesn't exist, return nil (no previous token)
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return bson.Raw(data), nil
 }
