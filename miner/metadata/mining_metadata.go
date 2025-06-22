@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "github.com/kinneko-de/poc-mongodb-changestream/golang/store_file/v1"
 )
@@ -93,9 +94,9 @@ func WatchChengeStream(ctx context.Context) error {
 			}
 
 			// Extract CreatedAt (time)
-			//if createdAt, ok := fullDoc["CreatedAt"].(primitive.DateTime); ok {
-			//	fileMsg.CreatedAt = createdAt.Time()
-			//}
+			if createdAt, ok := fullDoc["CreatedAt"].(primitive.DateTime); ok {
+				fileMsg.CreatedAt = timestamppb.New(createdAt.Time())
+			}
 
 			// Extract Size (int64)
 			if size, ok := fullDoc["Size"].(int64); ok {
