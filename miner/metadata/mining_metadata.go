@@ -90,7 +90,7 @@ func WatchChengeStream(ctx context.Context) error {
 
 			// Extract FileId (string)
 			if fileId, ok := fullDoc["FileId"].(string); ok {
-				fileMsg.FileId = fileId
+				fileMsg.FileId = &fileId
 			}
 
 			// Extract CreatedAt (time)
@@ -100,22 +100,22 @@ func WatchChengeStream(ctx context.Context) error {
 
 			// Extract Size (int64)
 			if size, ok := fullDoc["Size"].(int64); ok {
-				fileMsg.Size = size
+				fileMsg.Size = &size
 			}
 
 			// Extract MediaType (string)
 			if mediaType, ok := fullDoc["MediaType"].(string); ok {
-				fileMsg.MediaType = mediaType
+				fileMsg.MediaType = &mediaType
 			}
 
 			// Extract Extension (string)
 			if extension, ok := fullDoc["Extension"].(string); ok {
-				fileMsg.Extension = extension
+				fileMsg.Extension = &extension
 			}
 
 			// Serialize to JSON (simplified for demo)
 			fmt.Printf("Protobuf message: FileId=%s, Size=%d, MediaType=%s, Extension=%s\n",
-				fileMsg.FileId, fileMsg.Size, fileMsg.MediaType, fileMsg.Extension)
+				*fileMsg.FileId, *fileMsg.Size, *fileMsg.MediaType, *fileMsg.Extension)
 		}
 
 		resumeToken := changeStream.ResumeToken()

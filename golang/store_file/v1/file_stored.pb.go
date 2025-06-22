@@ -24,11 +24,11 @@ const (
 
 type FileStored struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Size          int64                  `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
-	MediaType     string                 `protobuf:"bytes,4,opt,name=media_type,json=mediaType,proto3" json:"media_type,omitempty"`
-	Extension     string                 `protobuf:"bytes,5,opt,name=extension,proto3" json:"extension,omitempty"`
+	FileId        *string                `protobuf:"bytes,1,opt,name=file_id,json=fileId" json:"file_id,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Size          *int64                 `protobuf:"varint,3,opt,name=size" json:"size,omitempty"`
+	MediaType     *string                `protobuf:"bytes,4,opt,name=media_type,json=mediaType" json:"media_type,omitempty"`
+	Extension     *string                `protobuf:"bytes,5,opt,name=extension" json:"extension,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -64,8 +64,8 @@ func (*FileStored) Descriptor() ([]byte, []int) {
 }
 
 func (x *FileStored) GetFileId() string {
-	if x != nil {
-		return x.FileId
+	if x != nil && x.FileId != nil {
+		return *x.FileId
 	}
 	return ""
 }
@@ -78,22 +78,22 @@ func (x *FileStored) GetCreatedAt() *timestamppb.Timestamp {
 }
 
 func (x *FileStored) GetSize() int64 {
-	if x != nil {
-		return x.Size
+	if x != nil && x.Size != nil {
+		return *x.Size
 	}
 	return 0
 }
 
 func (x *FileStored) GetMediaType() string {
-	if x != nil {
-		return x.MediaType
+	if x != nil && x.MediaType != nil {
+		return *x.MediaType
 	}
 	return ""
 }
 
 func (x *FileStored) GetExtension() string {
-	if x != nil {
-		return x.Extension
+	if x != nil && x.Extension != nil {
+		return *x.Extension
 	}
 	return ""
 }
@@ -111,7 +111,7 @@ const file_store_file_v1_file_stored_proto_rawDesc = "" +
 	"\x04size\x18\x03 \x01(\x03R\x04size\x12\x1d\n" +
 	"\n" +
 	"media_type\x18\x04 \x01(\tR\tmediaType\x12\x1c\n" +
-	"\textension\x18\x05 \x01(\tR\textensionBEZCgithub.com/kinneko-de/poc-mongodb-changestream/golang/store_file/v1b\x06proto3"
+	"\textension\x18\x05 \x01(\tR\textensionBEZCgithub.com/kinneko-de/poc-mongodb-changestream/golang/store_file/v1b\beditionsp\xe8\a"
 
 var (
 	file_store_file_v1_file_stored_proto_rawDescOnce sync.Once
