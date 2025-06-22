@@ -1,4 +1,11 @@
 #!/bin/bash
+
+# Check if protoc.exe exists
+if [ ! -f ../../tools/protoc/win64/bin/protoc.exe ]; then
+    echo "Error: tools/protoc/win64/bin/protoc.exe not found. Execute install-protoc-win64.sh or the corresponding script for your operating system.."
+    exit 1
+fi
+
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 protobase=proto
