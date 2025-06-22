@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	pb "github.com/kinneko-de/poc-mongodb-changestream/golang/store_file/v1"
 )
 
 const ResumeTokenDirectory = "app/data"
@@ -62,7 +64,6 @@ func WatchChengeStream(ctx context.Context) error {
 		// Fetch everything that is still retained in the oplog
 		// Do not use this in production
 		changeStreamOptions = changeStreamOptions.SetStartAtOperationTime(&primitive.Timestamp{T: 1})
-
 	}
 
 	changeStream, err := collection.Watch(ctx, mongo.Pipeline{}, changeStreamOptions)
@@ -77,6 +78,44 @@ func WatchChengeStream(ctx context.Context) error {
 			return fmt.Errorf("failed to decode change stream event: %v", err)
 		}
 		fmt.Printf("Change detected: %v\n", change)
+
+		// only works for insert change events
+		if fullDoc, ok := change["fullDocument"].(bson.M); ok {
+			// Process the full document as needed
+			fmt.Printf("Full document: %v\n", fullDoc)
+
+			// Extract fields and create protobuf message
+			fileMsg := &pb.FileStored{}
+
+			// Extract FileId (string)
+			if fileId, ok := fullDoc["FileId"].(string); ok {
+				fileMsg.FileId = fileId
+			}
+
+			// Extract CreatedAt (time)
+			//if createdAt, ok := fullDoc["CreatedAt"].(primitive.DateTime); ok {
+			//	fileMsg.CreatedAt = createdAt.Time()
+			//}
+
+			// Extract Size (int64)
+			if size, ok := fullDoc["Size"].(int64); ok {
+				fileMsg.Size = size
+			}
+
+			// Extract MediaType (string)
+			if mediaType, ok := fullDoc["MediaType"].(string); ok {
+				fileMsg.MediaType = mediaType
+			}
+
+			// Extract Extension (string)
+			if extension, ok := fullDoc["Extension"].(string); ok {
+				fileMsg.Extension = extension
+			}
+
+			// Serialize to JSON (simplified for demo)
+			fmt.Printf("Protobuf message: FileId=%s, Size=%d, MediaType=%s, Extension=%s\n",
+				fileMsg.FileId, fileMsg.Size, fileMsg.MediaType, fileMsg.Extension)
+		}
 
 		resumeToken := changeStream.ResumeToken()
 		StoreResumeToken(ctx, resumeToken)

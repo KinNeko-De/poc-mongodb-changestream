@@ -1,11 +1,16 @@
 module github.com/kinneko-de/poc-mongodb-changestream/miner
 
-go 1.24.2
+go 1.24.3
+
+replace github.com/kinneko-de/poc-mongodb-changestream/golang/store_file => ../golang/store_file
 
 require go.mongodb.org/mongo-driver v1.17.4
 
+require google.golang.org/protobuf v1.36.6 // indirect
+
 require (
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/kinneko-de/poc-mongodb-changestream/golang/store_file v0.0.0-00010101000000-000000000000
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
