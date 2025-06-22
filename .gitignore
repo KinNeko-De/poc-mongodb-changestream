@@ -27,3 +27,6 @@ bin/**
 
 # Ignore resume token
 miner/app/
+
+# Ignore all downloaded protoc versions
+tools/protoc/*/

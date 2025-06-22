@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package store_file.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/kinneko-de/poc-mongodb-changestream/golang/store_file/v1";
+
+message FileStored {
+  string file_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  int64 size = 3;
+  string media_type = 4;
+  string extension = 5;
+}
