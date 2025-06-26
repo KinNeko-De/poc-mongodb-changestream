@@ -20,11 +20,6 @@
 # Go workspace file
 go.work
 
-# sut log files
-scripts/sut/log/**
-# builded app
-bin/**
-
 # Ignore resume token
 miner/app/
 
